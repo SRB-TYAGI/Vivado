@@ -1,0 +1,23 @@
+// Code your testbench here
+// or browse Examples
+module tb;
+    mailbox mbox = new();
+
+    initial begin
+        bit [3:0] a;
+
+        // Generate and send random data to the mailbox
+        for (int i = 0; i < 10; i++) begin
+            a = $random;
+            mbox.put(a);
+            $display("Data sent is %d", a);
+        end
+
+        // Receive and display data from the mailbox indefinitely
+        forever begin
+            bit [3:0] b;
+            mbox.get(b);
+            $display("Data received is %d", b);
+        end
+    end
+endmodule

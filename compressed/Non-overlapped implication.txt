@@ -1,0 +1,34 @@
+// Code your testbench here
+// or browse Examples
+module assertion_ex;
+    bit clk, a, b ;
+
+    // Clock generation
+    always #5 clk = ~clk;
+
+    // Generating 'a' and 'b'
+    initial begin
+        a = 1; b = 1;
+        #15 a = 0; b = 0;
+        #10 a = 1; b = 0;
+        #10 a = 0; b = 0;
+        #10 a = 1; b = 1;
+        #10;
+        $finish;
+    end
+
+    // Assertion property
+    property p;
+        @(posedge clk) a |=> b; // a -> b
+    endproperty
+
+    // Calling assertion property
+    assert property (p);
+
+    // Wave dump
+    initial begin
+        $dumpfile("dump.vcd");
+        $dumpvars;
+    end
+
+endmodule

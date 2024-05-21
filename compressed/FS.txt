@@ -1,0 +1,137 @@
+Design.sv
+// Code your design here
+
+module FA(in1, in2, sum, cin, cout);
+    input in1, in2, cin;
+    output sum, cout;
+    assign sum = in1 ^ in2 ^ cin;
+    assign cout = (~in1 & cin) | (~in1 & in2) | (in2 & cin);
+endmodule
+
+
+Test bench.sv
+
+// Code your testbench here
+// or browse Examples
+`include "interface.sv"
+`include "test.sv"
+module testbench;
+    fa_intf pif();
+    test tb(pif);
+    FA f1(.in1(pif.in1), .in2(pif.in2), .cin(pif.cin), .sum(pif.sum), .cout(pif.cout));
+    initial begin
+        $dumpfile("dump.vcd");
+        $dumpvars(1);
+    end
+endmodule
+
+Interface.sv
+
+interface fa_intf;
+    logic in1;
+    logic in2;
+    logic cin;
+    logic sum;
+    logic cout;
+endinterface
+
+
+
+Environment.sv
+
+`include "generator.sv"
+`include "driver.sv"
+class environment;
+generator gen;
+driver drv;
+mailbox mbox;
+virtual fa_intf vif;
+function new(virtual fa_intf vif);
+this.vif = vif;
+mbox = new();
+gen = new(mbox);
+drv = new(vif, mbox);
+endfunction
+task run();
+fork
+gen.run();
+drv.run();
+join
+endtask
+endclass
+
+
+Transaction.sv
+
+class transaction;
+randc bit in1;
+randc bit in2;
+randc bit cin;
+bit sum;
+bit cout;
+endclass
+
+
+
+Generator.sv
+
+
+`include "transaction.sv"
+class generator;
+transaction tr; 
+mailbox mbox;
+function new(mailbox mbox);
+this.mbox = mbox;
+endfunction
+task run();
+begin
+tr = new();
+//tr.randomize();
+tr.in1 = 1;
+tr.in2 = 0; 
+tr.cin = 0;
+    $display("in1 = %0d, in2 = %0d, cin = %0d", tr.in1, tr.in2, tr.cin);
+mbox.put(tr);
+end
+endtask
+endclass
+
+
+Driver
+
+class driver;
+virtual fa_intf vif;
+mailbox mbox;
+transaction tr;
+function new(virtual fa_intf vif, mailbox mbox);
+tr = new();
+this.vif = vif;
+this.mbox = mbox;
+endfunction 
+task run();
+forever begin
+mbox.get(tr);
+vif.in1 = tr.in1;
+vif.in2 = tr.in2;
+vif.cin = tr.cin;
+#5;
+tr.sum = vif.sum;
+tr.cout = vif.cout;
+    $display("sum = %0d, cout = %0d", tr.sum, tr.cout);
+    end 
+endtask
+endclass
+
+
+Test.sv
+
+
+`include "environment.sv"
+program test(fa_intf vif);
+environment env;
+initial begin
+env = new(vif);
+env.run();
+end
+endprogram
+

@@ -1,0 +1,52 @@
+// Code your design here
+module Counter (input logic Clock, Reset, Enable, output logic [7:0] Q);
+timeunit 1ns;
+timeprecision 1ns;
+always_ff @(posedge Clock or posedge Reset)
+if (Reset)
+Q <= 0;
+else
+if (Enable)
+Q <= Q + 1;
+aReset : assert property (@(posedge Clock) Reset |-> Q == 0);
+    aEnable : assert property (@(posedge Clock) disable iff (Reset) !Enable |=> Q == $past(Q)) ;
+        aCount : assert property (@(posedge Clock) disable iff (Reset) Enable |=> Q == $past(Q)+8'b1);
+endmodule
+
+
+
+
+
+// Code your testbench here
+// or browse Examples
+module Countertb;
+    timeunit 1ns;
+    timeprecision 1ns;
+    logic Clock, Reset, Enable;
+    logic [7:0] Q;
+    Counter cou1 (Clock,Reset,Enable,Q);
+    always begin
+        #10 Clock = 1;
+        #10 Clock = 0;
+    end
+    initial
+        begin
+            #3ns
+            Enable = 0;
+            Reset = 1;
+            #10;
+            Reset = 0;
+            #10;
+            Enable = 1;
+            #23ns
+            Enable = 0;
+            #10;
+            Enable = 1;
+            #2560;
+            $stop;
+            $finish;
+        end
+    initial begin
+        $dumpfile("dump.vcd"); $dumpvars;
+    end
+endmodule
